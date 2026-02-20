@@ -1,11 +1,20 @@
 import { useState, useEffect } from 'react';
 import '@/App.css';
+import GoalSetupScreen from '@/components/GoalSetupScreen';
 import Dashboard from '@/components/Dashboard';
 import UnlockCelebration from '@/components/UnlockCelebration';
-import GoalSetupScreen from '@/components/GoalSetupScreen';
+import ConfirmationSummary from '@/components/ConfirmationSummary';
 
 function App() {
-  // Mock data starting in LOCKED state (all done: false)
+  // Navigation state
+  const [currentScreen, setCurrentScreen] = useState('setup'); // 'setup' or 'dashboard'
+  
+  // Goal setup form state
+  const [distractionName, setDistractionName] = useState('');
+  const [distractionCategory, setDistractionCategory] = useState('');
+  const [goalDescription, setGoalDescription] = useState('');
+  
+  // Mock assignments data - starts locked
   const [assignments, setAssignments] = useState([
     { id: 1, assignment: 'Lab 3', course: 'CMPS 101', done: false },
     { id: 2, assignment: 'Problem Set 5', course: 'MATH 23A', done: false }
@@ -13,13 +22,7 @@ function App() {
 
   const [isLocked, setIsLocked] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [hasGoalSetup, setHasGoalSetup] = useState(false);
-
-  // Check if user has completed goal setup
-  useEffect(() => {
-    const goalData = localStorage.getItem('goal_description');
-    setHasGoalSetup(!!goalData);
-  }, []);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Toggle assignment completion
   const toggleAssignment = (id) => {
@@ -47,29 +50,53 @@ function App() {
     }
   }, [assignments, isLocked]);
 
-  // Handle goal setup completion
-  const handleGoalSetup = () => {
-    setHasGoalSetup(true);
+  // Handle goal setup submission
+  const handleGoalSubmit = () => {
+    // Show confirmation overlay
+    setShowConfirmation(true);
+    
+    // After 2 seconds, hide confirmation and navigate to dashboard
+    setTimeout(() => {
+      setShowConfirmation(false);
+      setCurrentScreen('dashboard');
+    }, 2000);
   };
 
-  // Show goal setup screen if no goal data exists
-  if (!hasGoalSetup) {
-    return (
-      <div className="App">
-        <GoalSetupScreen onComplete={handleGoalSetup} />
-      </div>
-    );
-  }
+  // Handle back button from dashboard
+  const handleBackToSetup = () => {
+    setCurrentScreen('setup');
+  };
 
   return (
     <div className="App">
-      {showCelebration ? (
+      {/* Confirmation Overlay (shown after Lock It In) */}
+      {showConfirmation && (
+        <ConfirmationSummary
+          distractionName={distractionName}
+          distractionCategory={distractionCategory}
+          goalDescription={goalDescription}
+        />
+      )}
+
+      {/* Screen Navigation */}
+      {currentScreen === 'setup' ? (
+        <GoalSetupScreen
+          distractionName={distractionName}
+          distractionCategory={distractionCategory}
+          goalDescription={goalDescription}
+          onDistractionNameChange={setDistractionName}
+          onDistractionCategoryChange={setDistractionCategory}
+          onGoalDescriptionChange={setGoalDescription}
+          onSubmit={handleGoalSubmit}
+        />
+      ) : showCelebration ? (
         <UnlockCelebration />
       ) : (
         <Dashboard
           assignments={assignments}
           isLocked={isLocked}
           toggleAssignment={toggleAssignment}
+          onBack={handleBackToSetup}
         />
       )}
     </div>
